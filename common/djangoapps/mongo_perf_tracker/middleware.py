@@ -2,6 +2,7 @@
 Provide a means to aggregate and store MongoDB related performance in our product
 """
 import threading
+import logging
 from xmodule.contentstore.content import XASSET_LOCATION_TAG
 from django.conf import settings
 
@@ -11,10 +12,12 @@ _mongo_perf_tracker_threadlocal.data = {}
 # counter to keep track of how many requests we've processed. This is used to
 # keer track of when we need to flush out internal buffers out to some persistence
 # layer
-_trackable_requests_processed = 0
+trackable_requests_processed = 0
 
 # global object which retains a mapping of URL to DB performance information
-_db_stats_per_url = {}
+db_stats_per_url = {}
+
+log = logging.getLogger("lms.mongo_perf_tracker")
 
 
 class MongoPerfTracker(object):
@@ -88,6 +91,7 @@ class MongoPerfTracker(object):
         """
         Django middleware entry point that is called on every response sent back to client
         """
+        global trackable_requests_processed, db_stats_per_url
         if self._is_trackable_path(request):
             # copy over any stats gathered in this request and put in the global dictionary
             # to get written out on a periodic basis
@@ -100,15 +104,24 @@ class MongoPerfTracker(object):
             # first see if we have an entry for this path, if so see if an overwrite key
             # has been specified so that we can use that value to compare to what exists
             # this can be used to implement a high-water mark
-            if request.path in _db_stats_per_url and overwrite_key:
-                existing_level = _db_stats_per_url[request.path].get(overwrite_key, 0)
+            if request.path in db_stats_per_url and overwrite_key:
+                existing_level = db_stats_per_url[request.path].get(overwrite_key, 0)
                 new_level = _mongo_perf_tracker_threadlocal.data.get(overwrite_key, 0)
                 set_entry = existing_level < new_level
 
             if set_entry and len(_mongo_perf_tracker_threadlocal.data.keys()) > 0:
-                _db_stats_per_url[request.path] = _mongo_perf_tracker_threadlocal.data
+                db_stats_per_url[request.path] = _mongo_perf_tracker_threadlocal.data
 
-            print '*******************\ndb_stats = {0}\n*********************'.format(_db_stats_per_url)
+            trackable_requests_processed = trackable_requests_processed + 1
+
+            dump_limit = getattr(settings, 'MONGO_PERF_DUMP_AFTER_N_REQUESTS', 1)
+
+            if trackable_requests_processed > dump_limit:
+                # Note, we use WARN level so they don't get filtered out in the logs
+                log.warning('mongo_db_stats dump = {0}'.
+                            format(db_stats_per_url))
+                trackable_requests_processed = 0
+                db_stats_per_url = {}
 
         self.clear_perf_tracker_data()
         return response
