@@ -521,7 +521,6 @@ class MongoModuleStore(ModuleStoreBase):
         Returns a list of course descriptors.
         '''
         # TODO (vshnayder): Why do I have to specify i4x here?
-        print '!!!!!!!!!!!!!!!!!!!!!'
         course_filter = Location("i4x", category="course")
         return [
             course
