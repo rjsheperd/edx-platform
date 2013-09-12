@@ -19,6 +19,8 @@ registration.
 
 Studio: Switched to loading Javascript using require.js
 
+Studio: Improve drag and drop on the course overview and subsection views.
+
 LMS: Add split testing functionality for internal use.
 
 CMS: Add edit_course_tabs management command, providing a primitive
@@ -343,4 +345,4 @@ Common: Allow setting of authentication session cookie name.
 LMS: Option to email students when enroll/un-enroll them.
 
 Blades: Added WAI-ARIA markup to the video player controls. These are now fully
-accessible by screen readers.
+accessible by screen readers. 

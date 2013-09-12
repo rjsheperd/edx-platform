@@ -46,21 +46,23 @@ describe "Course Overview", ->
         """
 
         appendSetFixtures """
-          <div class="subsection-list">
+          <ol>
+          <li class="subsection-list branch" id="subsection-1">
             <ol class="sortable-unit-list" id="list-1" data-id="parent-list-id-1">
               <li class="unit" id="unit-1" data-id="first-unit-id" data-parent-id="parent-list-id-1"></li>
               <li class="unit" id="unit-2" data-id="second-unit-id" data-parent-id="parent-list-id-1"></li>
               <li class="unit" id="unit-3" data-id="third-unit-id" data-parent-id="parent-list-id-1"></li>
             </ol>
-          </div>
-          </div class="subsection-list">
+          </li>
+          <li class="subsection-list branch" id="subsection-2">
             <ol class="sortable-unit-list" id="list-2" data-id="parent-list-id-2">
               <li class="unit" id="unit-4" data-id="first-unit-id" data-parent-id="parent-list-id-2"></li>
             </ol>
-          </div>
-          <div class="subsection-list">
+          </li>
+          <li class="subsection-list branch" id="subsection-3">
             <ol class="sortable-unit-list" id="list-3" data-id="parent-list-id-3"></ol>
-          </div>
+          </li>
+          </ol>
         """#"
 
         spyOn(window, 'saveSetSectionScheduleDate').andCallThrough()
@@ -122,19 +124,47 @@ describe "Course Overview", ->
         $ele.offset(
           top: $ele.offset().top + 10, left: $ele.offset().left
         )
-        destination = CMS.Views.Draggabilly.findDestination($ele)
+        destination = CMS.Views.Draggabilly.findDestination($ele, 1)
         expect(destination.ele).toBe($('#unit-2'))
         expect(destination.attachMethod).toBe('before')
 
-      it "can drag and drop across section boundaries", ->
+      it "can drag and drop across section boundaries, with special handling for first element", ->
         $ele = $('#unit-1')
         $ele.offset(
-          top: $('#unit-4').offset().top + 10
+          top: $('#unit-4').offset().top + 8
           left: $ele.offset().left
         )
-        destination = CMS.Views.Draggabilly.findDestination($ele)
+        destination = CMS.Views.Draggabilly.findDestination($ele, 1)
+        expect(destination.ele).toBe($('#unit-4'))
+        # Dragging down into first element, we have a fudge factor makes it easier to drag at beginning.
+        expect(destination.attachMethod).toBe('before')
+        # Now past the "fudge factor".
+        $ele.offset(
+          top: $('#unit-4').offset().top + 12
+          left: $ele.offset().left
+        )
+        destination = CMS.Views.Draggabilly.findDestination($ele, 1)
         expect(destination.ele).toBe($('#unit-4'))
         expect(destination.attachMethod).toBe('after')
+
+      it "can drag and drop across section boundaries, with special handling for last element", ->
+        $ele = $('#unit-4')
+        $ele.offset(
+            top: $('#unit-3').offset().bottom + 4
+            left: $ele.offset().left
+        )
+        destination = CMS.Views.Draggabilly.findDestination($ele, -1)
+        expect(destination.ele).toBe($('#unit-3'))
+        # Dragging down up into last element, we have a fudge factor makes it easier to drag at beginning.
+        expect(destination.attachMethod).toBe('after')
+        # Now past the "fudge factor".
+        $ele.offset(
+            top: $('#unit-3').offset().top + 4
+            left: $ele.offset().left
+        )
+        destination = CMS.Views.Draggabilly.findDestination($ele, -1)
+        expect(destination.ele).toBe($('#unit-3'))
+        expect(destination.attachMethod).toBe('before')
 
       it "can drag into an empty list", ->
         $ele = $('#unit-1')
@@ -142,7 +172,7 @@ describe "Course Overview", ->
           top: $('#list-3').offset().top + 10
           left: $ele.offset().left
         )
-        destination = CMS.Views.Draggabilly.findDestination($ele)
+        destination = CMS.Views.Draggabilly.findDestination($ele, 1)
         expect(destination.ele).toBe($('#list-3'))
         expect(destination.attachMethod).toBe('prepend')
 
@@ -151,11 +181,23 @@ describe "Course Overview", ->
         $ele.offset(
           top: $ele.offset().top + 200, left: $ele.offset().left
         )
-        destination = CMS.Views.Draggabilly.findDestination($ele)
+        destination = CMS.Views.Draggabilly.findDestination($ele, 1)
         expect(destination).toEqual(
           ele: null
           attachMethod: ""
         )
+
+      it "can drag into a collapsed list", ->
+        $('#subsection-2').addClass('collapsed')
+        $ele = $('#unit-2')
+        $ele.offset(
+          top: $('#subsection-2').offset().top + 3
+          left: $ele.offset().left
+        )
+        destination = CMS.Views.Draggabilly.findDestination($ele, 1)
+        expect(destination.ele).toBe($('#list-2'))
+        expect(destination.parentList).toBe($('#subsection-2'))
+        expect(destination.attachMethod).toBe('prepend')
 
     describe "onDragStart", ->
       it "sets the dragState to its default values", ->
@@ -168,39 +210,63 @@ describe "Course Overview", ->
         )
         expect(CMS.Views.Draggabilly.dragState).toEqual(
           dropDestination: null,
-          expandTimer: null,
-          toExpand: null,
           attachMethod: '',
-          parentList: null
+          parentList: null,
+          lastY: 0,
+          dragDirection: 0
         )
 
-    describe "onDragMove", ->
-      it "clears the expand timer state", ->
-        timerSpy = spyOn(window, 'clearTimeout').andCallThrough()
-        $ele = $('#unit-1')
-        $ele.offset(
-          top: $ele.offset().top + 10
-          left: $ele.offset().left
-        )
-        CMS.Views.Draggabilly.onDragMove(
-          {element: $ele},
+      it "collapses expanded elements", ->
+        expect($('#subsection-1')).not.toHaveClass('collapsed')
+        CMS.Views.Draggabilly.onDragStart(
+          {element: $('#subsection-1')},
           null,
           null
         )
-        expect(timerSpy).toHaveBeenCalled()
-        timerSpy.reset()
+        expect($('#subsection-1')).toHaveClass('collapsed')
+        expect($('#subsection-1')).toHaveClass('expand-on-drop')
 
+    describe "onDragMove", ->
       it "adds the correct CSS class to the drop destination", ->
         $ele = $('#unit-1')
+        dragY = $ele.offset().top + 10
+        dragX = $ele.offset().left
         $ele.offset(
-          top: $ele.offset().top + 10, left: $ele.offset().left
+          top: dragY, left: dragX
         )
         CMS.Views.Draggabilly.onDragMove(
-          {element: $ele},
-          '',
-          ''
+          {element: $ele, dragPoint: {y: dragY}}, '', {clientX: dragX}
         )
         expect($('#unit-2')).toHaveClass('drop-target drop-target-before')
+        expect($ele).toHaveClass('valid-drop')
+
+      it "does not add CSS class to the drop destination if out of bounds", ->
+        $ele = $('#unit-1')
+        dragY = $ele.offset().top + 10
+        $ele.offset(
+          top: dragY, left: $ele.offset().left
+        )
+        CMS.Views.Draggabilly.onDragMove(
+            {element: $ele, dragPoint: {y: dragY}}, '', {clientX: $ele.offset().left - 3}
+        )
+        expect($('#unit-2')).not.toHaveClass('drop-target drop-target-before')
+        expect($ele).not.toHaveClass('valid-drop')
+
+      it "scrolls up if necessary", ->
+        scrollSpy = spyOn(window, 'scrollBy').andCallThrough()
+        CMS.Views.Draggabilly.onDragMove(
+          {element: $('#unit-1')}, '', {clientY: 2}
+        )
+        expect(scrollSpy).toHaveBeenCalledWith(0, -10)
+
+      it "scrolls down if necessary", ->
+        height = Math.max(window.innerHeight, 100);
+        spyOn(window, 'innerHeight').andReturn(height)
+        scrollSpy = spyOn(window, 'scrollBy').andCallThrough()
+        CMS.Views.Draggabilly.onDragMove(
+            {element: $('#unit-1')}, '', {clientY: (height - 5)}
+        )
+        expect(scrollSpy).toHaveBeenCalledWith(0, 10)
 
     describe "onDragEnd", ->
       beforeEach ->
@@ -210,6 +276,9 @@ describe "Course Overview", ->
         @reorderSpy.reset()
 
       it "calls handleReorder on a successful drag", ->
+        CMS.Views.Draggabilly.dragState.dropDestination = $('#unit-2')
+        CMS.Views.Draggabilly.dragState.attachMethod = "before"
+        CMS.Views.Draggabilly.dragState.parentList = $('#subsection-1')
         $('#unit-1').offset(
           top: $('#unit-1').offset().top + 10
           left: $('#unit-1').offset().left
@@ -217,7 +286,7 @@ describe "Course Overview", ->
         CMS.Views.Draggabilly.onDragEnd(
           {element: $('#unit-1')},
           null,
-          {x: $('#unit-1').offset().left}
+          {clientX: $('#unit-1').offset().left}
         )
         expect(@reorderSpy).toHaveBeenCalled()
 
@@ -238,3 +307,26 @@ describe "Course Overview", ->
         # Chrome sets the CSS to 'auto', but Firefox uses '0px'.
         expect(['0px', 'auto']).toContain($('#unit-1').css('top'))
         expect(['0px', 'auto']).toContain($('#unit-1').css('left'))
+
+      it "expands an element if it was collapsed on drag start", ->
+        $('#subsection-1').addClass('collapsed')
+        $('#subsection-1').addClass('expand-on-drop')
+        CMS.Views.Draggabilly.onDragEnd(
+          {element: $('#subsection-1')},
+          null,
+          null
+        )
+        expect($('#subsection-1')).not.toHaveClass('collapsed')
+        expect($('#subsection-1')).not.toHaveClass('expand-on-drop')
+
+      it "expands a collapsed element when something is dropped in it", ->
+        $('#subsection-2').addClass('collapsed')
+        CMS.Views.Draggabilly.dragState.dropDestination = $('#list-2')
+        CMS.Views.Draggabilly.dragState.attachMethod = "prepend"
+        CMS.Views.Draggabilly.dragState.parentList = $('#subsection-2')
+        CMS.Views.Draggabilly.onDragEnd(
+          {element: $('#unit-1')},
+          null,
+          {clientX: $('#unit-1').offset().left}
+        )
+        expect($('#subsection-2')).not.toHaveClass('collapsed')

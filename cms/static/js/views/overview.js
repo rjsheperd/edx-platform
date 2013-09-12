@@ -1,12 +1,14 @@
 CMS.Views.Draggabilly = {
     droppableClasses: 'drop-target drop-target-prepend drop-target-before drop-target-after',
+    validDropClass: "valid-drop",
+    expandOnDropClass: "expand-on-drop",
 
     /*
      * Determine information about where to drop the currently dragged
      * element. Returns the element to attach to and the method of
      * attachment ('before', 'after', or 'prepend').
      */
-    findDestination: function(ele) {
+    findDestination: function(ele, yChange) {
         var eleY = ele.offset().top;
         var containers = $(ele.data('droppable-class'));
 
@@ -22,7 +24,7 @@ CMS.Views.Draggabilly = {
             // position of the container
             var parentList = container.parents(ele.data('parent-location-selector')).first();
             if(parentList.hasClass('collapsed')) {
-                if(Math.abs(eleY - parentList.offset().top) < 50) {
+                if(Math.abs(eleY - parentList.offset().top) < 10) {
                     return {
                         ele: container,
                         attachMethod: 'prepend',
@@ -47,17 +49,33 @@ CMS.Views.Draggabilly = {
                 }
                 // Otherwise the list is populated, and we should attach before/after a sibling
                 else {
-                    for(var j = 0; j < siblings.length; j++) {
+                    for (var j = 0; j < siblings.length; j++) {
                         var $sibling = $(siblings[j]);
                         var siblingY = $sibling.offset().top;
-                        // Subtract 1 to be sure that we test if this
-                        // element is actually on top of the sibling,
-                        // rather than next to it. This prevents
-                        // saving when expanding/collapsing a list.
-                        if(Math.abs(eleY - siblingY) < ele.height() - 1) {
+                        var siblingHeight = $sibling.height();
+                        var siblingYEnd = siblingY + siblingHeight;
+
+                        // Facilitate dropping into the beginning or end of a list
+                        // (coming from opposite direction) via a "fudge factor". Math.min is for Jasmine test.
+                        var fudge = Math.min(Math.ceil(siblingHeight/2), 20);
+                        // Dragging up into end of list.
+                        if (j == siblings.length - 1 && yChange < 0 && Math.abs(eleY - siblingYEnd) <= fudge) {
                             return {
                                 ele: $sibling,
-                                attachMethod: siblingY > eleY ? 'before' : 'after'
+                                attachMethod: 'after'
+                            };
+                        }
+                        // Dragging down into beginning of list.
+                        else if (j == 0 && yChange > 0 && Math.abs(eleY - siblingY) <= fudge) {
+                            return {
+                                ele: $sibling,
+                                attachMethod: 'before'
+                            };
+                        }
+                        else if (eleY >= siblingY && eleY <= siblingYEnd) {
+                            return {
+                                ele: $sibling,
+                                attachMethod: eleY - siblingY <= siblingHeight / 2 ? 'before' : 'after'
                             };
                         }
                     }
@@ -79,46 +97,64 @@ CMS.Views.Draggabilly = {
         this.dragState = {
             // Which element will be dropped into/onto on success
             dropDestination: null,
-            // Timer if we're hovering over a collapsed section
-            expandTimer: null,
-            // The list which will be expanded on hover
-            toExpand: null,
             // How we attach to the destination: 'before', 'after', 'prepend'
             attachMethod: '',
             // If dragging to an empty section, the parent section
-            parentList: null
+            parentList: null,
+            // The y location of the last dragMove event (to determine direction).
+            lastY: 0,
+            // The direction the drag is moving in (negative means up, positive down).
+            dragDirection : 0
         };
+        if (!ele.hasClass('collapsed')) {
+            ele.addClass('collapsed');
+            ele.find('.expand-collapse-icon').addClass('expand').removeClass('collapse');
+            // onDragStart gets called again after the collapse, so we can't just store a variable in the dragState.
+            ele.addClass(this.expandOnDropClass);
+        }
     },
 
     onDragMove: function(draggie, event, pointer) {
+        // Handle scrolling of the browser.
+        var scrollAmount = 0;
+        var dragBuffer = 10;
+        if (window.innerHeight - dragBuffer < pointer.clientY) {
+            scrollAmount = dragBuffer;
+        }
+        else if (dragBuffer > pointer.clientY){
+            scrollAmount = -(dragBuffer);
+        }
+        if (scrollAmount !== 0) {
+            window.scrollBy(0, scrollAmount);
+            return;
+        }
+
+        var yChange = draggie.dragPoint.y - this.dragState.lastY;
+        if (yChange !== 0) {
+            this.dragState.direction = yChange;
+        }
+        this.dragState.lastY = draggie.dragPoint.y;
+
         var ele = $(draggie.element);
-        var destinationInfo = this.findDestination(ele);
+        var destinationInfo = this.findDestination(ele, this.dragState.direction);
         var destinationEle = destinationInfo.ele;
-        var parentList = this.dragState.parentList = destinationInfo.parentList;
-        // Clear the timer if we're not hovering over any element
-        if(!parentList) {
-            clearTimeout(this.dragState.expandTimer);
-        }
-        // If we're hovering over a new element, clear the timer and
-        // set a new one
-        else if(!this.dragState.toExpand || parentList[0] !== this.dragState.toExpand[0]) {
-            clearTimeout(this.dragState.expandTimer);
-            this.dragState.expandTimer = setTimeout(function() {
-                parentList.removeClass('collapsed');
-                parentList.find('.expand-collapse-icon').removeClass('expand').addClass('collapse');
-            }, 400);
-            this.dragState.toExpand = parentList;
-        }
+        this.dragState.parentList = destinationInfo.parentList;
+
         // Clear out the old destination
         if(this.dragState.dropDestination) {
             this.dragState.dropDestination.removeClass(this.droppableClasses);
         }
         // Mark the new destination
-        if(destinationEle) {
-            ele.addClass('valid-drop');
+        if(destinationEle && this.pointerInBounds(pointer, ele)) {
+            ele.addClass(this.validDropClass);
             destinationEle.addClass('drop-target drop-target-' + destinationInfo.attachMethod);
             this.dragState.attachMethod = destinationInfo.attachMethod;
             this.dragState.dropDestination = destinationEle;
+        }
+        else {
+            ele.removeClass(this.validDropClass);
+            this.dragState.attachMethod = '';
+            this.dragState.dropDestination = null;
         }
     },
 
@@ -127,21 +163,24 @@ CMS.Views.Draggabilly = {
         var destination = this.dragState.dropDestination;
 
         // If the drag succeeded, rearrange the DOM and send the result.
-        if(destination && pointer.x >= ele.offset().left
-           && pointer.x < ele.offset().left + ele.width()) {
+        if(destination && this.pointerInBounds(pointer, ele)) {
             // Make sure we don't drop into a collapsed element
             if(this.dragState.parentList) {
-                this.dragState.parentList.removeClass('collapsed');
+                this.expandElement(this.dragState.parentList);
             }
             var method = this.dragState.attachMethod;
             destination[method](ele);
             this.handleReorder(ele);
-            ele.removeClass('valid-drop');
         }
         // If the drag failed, send it back
         else {
             $('.was-dragging').removeClass('was-dragging');
             ele.addClass('was-dragging');
+        }
+        ele.removeClass(this.validDropClass);
+        if (ele.hasClass(this.expandOnDropClass)) {
+            this.expandElement(ele);
+            ele.removeClass(this.expandOnDropClass);
         }
 
         // Everything in its right place
@@ -154,8 +193,16 @@ CMS.Views.Draggabilly = {
         if(this.dragState.dropDestination) {
             this.dragState.dropDestination.removeClass(this.droppableClasses);
         }
-        clearTimeout(this.dragState.expandTimer);
         this.dragState = {};
+    },
+
+    pointerInBounds: function (pointer, ele) {
+        return pointer.clientX >= ele.offset().left && pointer.clientX < ele.offset().left + ele.width();
+    },
+
+    expandElement: function (ele) {
+        ele.removeClass('collapsed');
+        ele.find('.expand-collapse-icon').removeClass('expand').addClass('collapse');
     },
 
     /*
@@ -241,21 +288,21 @@ $(document).ready(function() {
     // Section
     CMS.Views.Draggabilly.makeDraggable(
         '.courseware-section',
-        '.section-drag-handle',
+        'a.section-drag-handle',
         '.courseware-overview',
         'article.courseware-overview'
     );
     // Subsection
     CMS.Views.Draggabilly.makeDraggable(
         '.id-holder',
-        '.subsection-drag-handle',
+        'a.subsection-drag-handle',
         '.subsection-list > ol',
         '.courseware-section'
     );
     // Unit
     CMS.Views.Draggabilly.makeDraggable(
         '.unit',
-        '.unit-drag-handle',
+        'a.unit-drag-handle',
         'ol.sortable-unit-list',
         'li.branch, article.subsection-body'
     );
