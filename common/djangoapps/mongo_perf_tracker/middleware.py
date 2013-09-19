@@ -20,6 +20,7 @@ db_stats_per_url = {}
 
 log = logging.getLogger("common.mongo_perf_tracker")
 
+_perf_tracker = None
 
 class MongoPerfTracker(object):
     """
@@ -127,3 +128,12 @@ class MongoPerfTracker(object):
 
         self.clear_perf_tracker_data()
         return response
+
+    @classmethod
+    def get_perf_tracker(cls):
+        global _perf_tracker
+        
+        if not _perf_tracker:
+            _perf_tracker = MongoPerfTracker()
+
+        return _perf_tracker
