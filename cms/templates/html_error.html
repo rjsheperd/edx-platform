@@ -1,0 +1,19 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html" />
+<%! from django.core.urlresolvers import reverse %>
+<%block name="bodyclass">error</%block>
+<%block name="title">
+  500 - ${_("Internal Server Error")}
+</%block>
+
+<%block name="content">
+  <div class="error-prompt">
+    <h1>${_("The Page You Requested Page Cannot be Found")}</h1>
+    <p class="description">
+    % if message:
+      ${message}
+    % else:
+      ${_("We're having trouble rendering your component.")}
+    % endif
+  </div>
+</%block>
