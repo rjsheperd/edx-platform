@@ -185,5 +185,8 @@ def get_preview_html(request, descriptor, idx):
     specified by the descriptor and idx.
     """
     module = load_preview_module(request, str(idx), descriptor)
-    return module.runtime.render(module, None, "student_view").content
-
+    try:
+        content = module.runtime.render(module, None, "student_view").content
+    except Exception as exc:                          #pylint: disable=W0703
+        content = render_to_string('html_error.html', {'message': str(exc)})
+    return content
