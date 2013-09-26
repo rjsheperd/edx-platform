@@ -1,6 +1,8 @@
 # disable missing docstring
 #pylint: disable=C0111
 
+import os
+from django.conf import settings
 from lettuce import world, step
 from nose.tools import assert_equal, assert_true  # pylint: disable=E0611
 from common import type_in_codemirror
@@ -25,12 +27,12 @@ def i_created_blank_common_problem(step):
 
 
 @step('I edit and select Settings$')
-def i_edit_and_select_settings(step):
+def i_edit_and_select_settings(_step):
     world.edit_component_and_select_settings()
 
 
 @step('I see five alphabetized settings and their expected values$')
-def i_see_five_settings_with_values(step):
+def i_see_five_settings_with_values(_step):
     world.verify_all_setting_entries(
         [
             [DISPLAY_NAME, "Blank Common Problem", True],
@@ -42,7 +44,7 @@ def i_see_five_settings_with_values(step):
 
 
 @step('I can modify the display name')
-def i_can_modify_the_display_name(step):
+def i_can_modify_the_display_name(_step):
     # Verifying that the display name can be a string containing a floating point value
     # (to confirm that we don't throw an error because it is of the wrong type).
     index = world.get_setting_entry_index(DISPLAY_NAME)
@@ -59,7 +61,7 @@ def my_display_name_change_is_persisted_on_save(step):
 
 
 @step('I can specify special characters in the display name')
-def i_can_modify_the_display_name_with_special_chars(step):
+def i_can_modify_the_display_name_with_special_chars(_step):
     index = world.get_setting_entry_index(DISPLAY_NAME)
     world.css_fill('.wrapper-comp-setting .setting-input', "updated ' \" &", index=index)
     if world.is_firefox():
@@ -74,7 +76,7 @@ def special_chars_persisted_on_save(step):
 
 
 @step('I can revert the display name to unset')
-def can_revert_display_name_to_unset(step):
+def can_revert_display_name_to_unset(_step):
     world.revert_setting_entry(DISPLAY_NAME)
     verify_unset_display_name()
 
@@ -86,7 +88,7 @@ def my_display_name_is_persisted_on_save(step):
 
 
 @step('I can select Per Student for Randomization')
-def i_can_select_per_student_for_randomization(step):
+def i_can_select_per_student_for_randomization(_step):
     world.browser.select(RANDOMIZATION, "Per Student")
     verify_modified_randomization()
 
@@ -105,7 +107,7 @@ def i_can_revert_to_default_for_randomization(step):
 
 
 @step('I can set the weight to "(.*)"?')
-def i_can_set_weight(step, weight):
+def i_can_set_weight(_step, weight):
     set_weight(weight)
     verify_modified_weight()
 
@@ -175,14 +177,14 @@ def create_latex_problem(step):
 
 
 @step('I edit and compile the High Level Source')
-def edit_latex_source(step):
+def edit_latex_source(_step):
     open_high_level_source()
     type_in_codemirror(1, "hi")
     world.css_click('.hls-compile')
 
 
 @step('my change to the High Level Source is persisted')
-def high_level_source_persisted(step):
+def high_level_source_persisted(_step):
     def verify_text(driver):
         css_sel = '.problem div>span'
         return world.css_text(css_sel) == 'hi'
@@ -191,9 +193,41 @@ def high_level_source_persisted(step):
 
 
 @step('I view the High Level Source I see my changes')
-def high_level_source_in_editor(step):
+def high_level_source_in_editor(_step):
     open_high_level_source()
     assert_equal('hi', world.css_value('.source-edit-box'))
+
+
+@step(u'I go to the import page')
+def go_to_uploads(_step):
+    menu_css = 'li.nav-course-tools'
+    uploads_css = 'li.nav-course-tools-import a'
+    world.css_click(menu_css)
+    world.css_click(uploads_css)
+
+@step(u'I import the file "([^"]*)"$')
+def upload_file(_step, file_name):
+    world.css_click('a.choose-file-button')
+    path = os.path.join(settings.COMMON_TEST_DATA_ROOT, 'data/', file_name)
+    world.browser.execute_script("$('input.file-input').css('display', 'block')")
+    world.browser.attach_file('file', os.path.abspath(path))
+
+
+@step('^I see a message that says "[^"]*"$')
+def i_can_see_message(_step, msg):
+    world.css_find("h2:contains('{0}')".format(msg))
+
+@step('^I can edit the problem$')
+def i_can_edit_problem(_step):
+    world.edit_component()
+    assert world.css_click("textarea.edit-box")
+    assert world.css_click("a.save-button")
+
+@step('^I can delete the problem$')
+def i_can_delete_problem(_step):
+    world.edit_component()
+    assert world.css_click("textarea.edit-box")
+    assert world.css_click("a.delete-button")
 
 
 def verify_high_level_source_links(step, visible):

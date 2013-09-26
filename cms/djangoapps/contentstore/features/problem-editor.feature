@@ -88,3 +88,12 @@ Feature: Problem Editor
     When I edit and compile the High Level Source
     Then my change to the High Level Source is persisted
     And when I view the High Level Source I see my changes
+
+  Scenario: Exceptions don't cause problem to be uneditable (bug STUD-786)
+    Given I go to the import page
+    And I import a course with a broken problem
+    When I go to the vertical
+    And I click on "Edit a draft"
+    Then I see a message that says "We're having trouble rendering your component"
+    And I can edit the problem
+    And I can delete the problem

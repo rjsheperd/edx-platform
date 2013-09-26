@@ -25,13 +25,10 @@ def create_component_instance(step, component_button_css, category,
         len(world.css_find(expected_css)),
         "Component instance with css {css} was not created successfully".format(css=expected_css))
 
-
-
 @world.absorb
 def click_new_component_button(step, component_button_css):
     step.given('I have clicked the new unit button')
     world.css_click(component_button_css)
-
 
 @world.absorb
 def click_component_from_menu(category, boilerplate, expected_css):
@@ -56,12 +53,10 @@ def edit_component_and_select_settings():
     world.css_click('a.edit-button')
     world.css_click('#settings-mode a')
 
-
 @world.absorb
 def edit_component():
     world.wait_for(lambda _driver: world.css_visible('a.edit-button'))
     world.css_click('a.edit-button')
-
 
 @world.absorb
 def verify_setting_entry(setting, display_name, value, explicitly_set):
@@ -76,7 +71,6 @@ def verify_setting_entry(setting, display_name, value, explicitly_set):
     assert_equal(explicitly_set, settingClearButton.has_class('active'))
     assert_equal(not explicitly_set, settingClearButton.has_class('inactive'))
 
-
 @world.absorb
 def verify_all_setting_entries(expected_entries):
     settings = world.browser.find_by_css('.wrapper-comp-setting')
@@ -87,7 +81,6 @@ def verify_all_setting_entries(expected_entries):
             expected_entries[counter][1], expected_entries[counter][2]
         )
 
-
 @world.absorb
 def save_component_and_reopen(step):
     world.css_click("a.save-button")
@@ -96,7 +89,6 @@ def save_component_and_reopen(step):
     reload_the_page(step)
     edit_component_and_select_settings()
 
-
 @world.absorb
 def cancel_component(step):
     world.css_click("a.cancel-button")
@@ -104,11 +96,9 @@ def cancel_component(step):
     # they are not persisted. Refresh the browser to make sure the changes were not persisted.
     reload_the_page(step)
 
-
 @world.absorb
 def revert_setting_entry(label):
     get_setting_entry(label).find_by_css('.setting-clear')[0].click()
-
 
 @world.absorb
 def get_setting_entry(label):
