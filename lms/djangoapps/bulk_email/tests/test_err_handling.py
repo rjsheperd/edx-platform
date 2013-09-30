@@ -144,7 +144,7 @@ class TestEmailErrors(ModuleStoreTestCase):
     @patch('bulk_email.tasks.get_connection', Mock(return_value=EmailTestException))
     def test_general_exception(self, mock_log, retry, result):
         """
-        Tests the if the error is not SMTP-related, we log and reraise
+        Tests the if the error is unexpected, we log and retry
         """
         test_email = {
             'action': 'Send email',
@@ -156,11 +156,10 @@ class TestEmailErrors(ModuleStoreTestCase):
         # so we assert on the arguments of log.exception
         self.client.post(self.url, test_email)
         self.assertTrue(mock_log.exception.called)
-        ((log_str, _task_id, email_id, to_list), _) = mock_log.exception.call_args
-        self.assertIn('caused send_course_email task to fail with uncaught exception.', log_str)
+        ((log_str, _task_id, email_id), _) = mock_log.exception.call_args
+        self.assertIn('caused send_course_email task to fail with unexpected exception.', log_str)
         self.assertEqual(email_id, 1)
-        self.assertEqual(to_list, [self.instructor.email])
-        self.assertFalse(retry.called)
+        self.assertTrue(retry.called)
         # check the results being returned
         self.assertTrue(result.called)
         ((initial_results, ), kwargs) = result.call_args

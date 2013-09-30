@@ -85,7 +85,7 @@ class TestInstructorTasks(InstructorTaskModuleTestCase):
     def _test_missing_current_task(self, task_class):
         """Check that a task_class fails when celery doesn't provide a current_task."""
         task_entry = self._create_input_entry()
-        with self.assertRaises(UpdateProblemModuleStateError):
+        with self.assertRaises(ValueError):
             task_class(task_entry.id, self._get_xmodule_instance_args())
 
     def _test_undefined_course(self, task_class):

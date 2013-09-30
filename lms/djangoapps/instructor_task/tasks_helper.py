@@ -283,7 +283,7 @@ def run_main_task(entry_id, task_fcn, action_name):
         fmt = 'Requested task did not match actual task "{actual_id}": {task_info}'
         message = fmt.format(actual_id=request_task_id, task_info=task_info_string)
         TASK_LOG.error(message)
-        raise UpdateProblemModuleStateError(message)
+        raise ValueError(message)
 
     # Now do the work:
     with dog_stats_api.timer('instructor_tasks.time.overall', tags=['action:{name}'.format(name=action_name)]):
