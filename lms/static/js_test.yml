@@ -43,6 +43,7 @@ lib_paths:
     - xmodule_js/common_static/js/vendor/annotator.tags.min.js
     - xmodule_js/common_static/js/vendor/jasmine-jquery.js
     - xmodule_js/common_static/js/vendor/jquery.leanModal.min.js
+    - xmodule_js/common_static/js/vendor/jquery.ajaxQueue.js
     - xmodule_js/common_static/js/vendor/flot/jquery.flot.js
     - xmodule_js/src
     - xmodule_js/common_static/js/test/add_ajax_prefix.js
@@ -73,7 +74,7 @@ fixture_paths:
 # appearing in the test runner page.
 # Files are included by default, which means that they
 # are loaded using a <script> tag in the test runner page.
-# When loading many files, this can be slow, so 
+# When loading many files, this can be slow, so
 # exclude any files you don't need.
 #exclude_from_page:
 #    - path/to/lib/exclude/*
