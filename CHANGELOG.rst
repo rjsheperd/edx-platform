@@ -319,3 +319,5 @@ LMS: Option to email students when enroll/un-enroll them.
 
 Blades: Added WAI-ARIA markup to the video player controls. These are now fully
 accessible by screen readers. 
+
+CMS: added restful interface for finding orphans in courses: GET http://host/org.course/orphan returns json array of ids
