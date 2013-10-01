@@ -17,6 +17,8 @@ the Check/Final Check buttons with keys: custom_check and custom_final_check
 LMS: Add PaidCourseRegistration mode, where payment is required before course
 registration.
 
+Studio: Better feedback during the course import process
+
 LMS: Add split testing functionality for internal use.
 
 CMS: Add edit_course_tabs management command, providing a primitive
