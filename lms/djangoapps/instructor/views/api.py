@@ -731,7 +731,7 @@ def send_email(request, course_id):
     if not has_instructor_access:
         return HttpResponseForbidden("Operation requires instructor access.")
     email = CourseEmail(
-        course_id = course_id,
+        course_id=course_id,
         sender=request.user,
         to_option=send_to,
         subject=subject,
@@ -747,6 +747,7 @@ def send_email(request, course_id):
         'course_id': course_id,
     }
     return JsonResponse(response_payload)
+
 
 @ensure_csrf_cookie
 @cache_control(no_cache=True, no_store=True, must_revalidate=True)

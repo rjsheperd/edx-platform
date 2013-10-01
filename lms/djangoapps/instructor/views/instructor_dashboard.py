@@ -52,7 +52,7 @@ def instructor_dashboard_2(request, course_id):
     ]
 
     if settings.MITX_FEATURES['ENABLE_INSTRUCTOR_EMAIL'] and is_studio_course:
-        sections.append(_section_send_email(course_id,access,course))
+        sections.append(_section_send_email(course_id, access, course))
 
     context = {
         'course': course,
@@ -148,13 +148,14 @@ def _section_data_download(course_id):
     }
     return section_data
 
+
 def _section_send_email(course_id, access, course):
     """ Provide data for the corresponding bulk email section """
     html_module = HtmlDescriptor(course.system, DictFieldData({'data': ''}), ScopeIds(None, None, None, None))
     section_data = {
         'section_key': 'send_email',
         'section_display_name': _('Email'),
-        'access': access,
+        'access': access, 
         'send_email': reverse('send_email',kwargs={'course_id': course_id}),
         'editor': wrap_xmodule(html_module.get_html, html_module, 'xmodule_edit.html')()
     }
