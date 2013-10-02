@@ -89,7 +89,7 @@ class TestInstructorTasks(InstructorTaskModuleTestCase):
             task_class(task_entry.id, self._get_xmodule_instance_args())
 
     def _test_undefined_course(self, task_class):
-        # run with celery, but no course defined
+        """Run with celery, but with no course defined."""
         task_entry = self._create_input_entry(course_id="bogus/course/id")
         with self.assertRaises(ItemNotFoundError):
             self._run_task_with_mock_celery(task_class, task_entry.id, task_entry.task_id)

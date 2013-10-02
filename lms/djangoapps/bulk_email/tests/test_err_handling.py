@@ -4,7 +4,6 @@ Unit tests for handling email sending errors
 from itertools import cycle
 from mock import patch, Mock
 from smtplib import SMTPDataError, SMTPServerDisconnected, SMTPConnectError
-from unittest import skip
 
 from django.test.utils import override_settings
 from django.conf import settings
@@ -93,9 +92,9 @@ class TestEmailErrors(ModuleStoreTestCase):
         # Test that after the rejected email, the rest still successfully send
         ((_initial_results), kwargs) = result.call_args
         self.assertEquals(kwargs['skipped'], 0)
-        expectedNumFails = int((settings.EMAILS_PER_TASK + 3) / 4.0)
-        self.assertEquals(kwargs['failed'], expectedNumFails)
-        self.assertEquals(kwargs['succeeded'], settings.EMAILS_PER_TASK - expectedNumFails)
+        expected_fails = int((settings.EMAILS_PER_TASK + 3) / 4.0)
+        self.assertEquals(kwargs['failed'], expected_fails)
+        self.assertEquals(kwargs['succeeded'], settings.EMAILS_PER_TASK - expected_fails)
 
     @patch('bulk_email.tasks.get_connection', autospec=True)
     @patch('bulk_email.tasks.send_course_email.retry')
@@ -179,7 +178,7 @@ class TestEmailErrors(ModuleStoreTestCase):
         entry = InstructorTask.create(course_id, "task_type", "task_key", "task_input", self.instructor)
         task_input = {"email_id": -1}
         with self.assertRaises(CourseEmail.DoesNotExist):
-            perform_delegate_email_batches(entry.id, course_id, task_input, "action_name")
+            perform_delegate_email_batches(entry.id, course_id, task_input, "action_name")  # pylint: disable=E1101
         ((log_str, _, email_id), _) = mock_log.warning.call_args
         self.assertTrue(mock_log.warning.called)
         self.assertIn('Failed to get CourseEmail with id', log_str)
@@ -195,9 +194,9 @@ class TestEmailErrors(ModuleStoreTestCase):
         email = CourseEmail(course_id=course_id)
         email.save()
         entry = InstructorTask.create(course_id, "task_type", "task_key", "task_input", self.instructor)
-        task_input = {"email_id": email.id}
+        task_input = {"email_id": email.id}  # pylint: disable=E1101
         with self.assertRaises(Exception):
-            perform_delegate_email_batches(entry.id, course_id, task_input, "action_name")
+            perform_delegate_email_batches(entry.id, course_id, task_input, "action_name")  # pylint: disable=E1101
         ((log_str, _, _), _) = mock_log.exception.call_args
         self.assertTrue(mock_log.exception.called)
         self.assertIn('get_course_by_id failed:', log_str)
@@ -210,9 +209,9 @@ class TestEmailErrors(ModuleStoreTestCase):
         email = CourseEmail(course_id=self.course.id, to_option="IDONTEXIST")
         email.save()
         entry = InstructorTask.create(self.course.id, "task_type", "task_key", "task_input", self.instructor)
-        task_input = {"email_id": email.id}
+        task_input = {"email_id": email.id}  # pylint: disable=E1101
         with self.assertRaises(Exception):
-            perform_delegate_email_batches(entry.id, self.course.id, task_input, "action_name")
+            perform_delegate_email_batches(entry.id, self.course.id, task_input, "action_name")  # pylint: disable=E1101
         ((log_str, opt_str), _) = mock_log.error.call_args
         self.assertTrue(mock_log.error.called)
         self.assertIn('Unexpected bulk email TO_OPTION found', log_str)

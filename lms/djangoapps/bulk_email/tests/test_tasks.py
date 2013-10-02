@@ -9,10 +9,9 @@ import json
 from uuid import uuid4
 from itertools import cycle
 from mock import patch, Mock
-from smtplib import SMTPDataError, SMTPServerDisconnected, SMTPConnectError
-# from unittest import skip
+from smtplib import SMTPDataError, SMTPServerDisconnected
 
-from celery.states import SUCCESS, FAILURE
+from celery.states import SUCCESS
 
 # from django.test.utils import override_settings
 from django.conf import settings
@@ -27,41 +26,8 @@ from instructor_task.tests.test_base import InstructorTaskCourseTestCase
 from instructor_task.tests.factories import InstructorTaskFactory
 
 
-# @override_settings(MODULESTORE=TEST_DATA_MONGO_MODULESTORE)
-# class TestEmailSendExceptions(ModuleStoreTestCase):
-#     """
-#     Test that exceptions are handled correctly.
-#     """
-#     def _do_send_course_email(self, entry, email_id, to_list, global_email_context):
-#         """Submit a task and mock how celery provides a current_task."""
-#         subtask_progress = create_subtask_result()
-#         self.current_task = Mock()
-#         self.current_task.request = Mock()
-#         self.current_task.request.id = entry.task_id if entry is not None else "NONE"
-#         self.current_task.request.retries = 0
-#         self.current_task.update_state = Mock()
-#         entry_id = entry.id if entry is not None else 101
-#         with patch('bulk_email.tasks._get_current_task') as mock_get_task:
-#             mock_get_task.return_value = self.current_task
-#             return send_course_email(entry_id, email_id, to_list, global_email_context, subtask_progress)
-# 
-#     def test_no_instructor_task(self):
-#         with self.assertRaises(InstructorTask.DoesNotExist):
-#             self._do_send_course_email(None, 101, [], {})
-# 
-#     def test_no_course_title(self):
-#         entry = InstructorTaskFactory.create(task_key='', task_id='dummy')
-#         with self.assertRaises(KeyError):
-#             self._do_send_course_email(entry, 101, [], {})
-# 
-#     def test_no_course_email_obj(self):
-#         # Make sure send_course_email handles CourseEmail.DoesNotExist exception.
-#         entry = InstructorTaskFactory.create(task_key='', task_id='dummy')
-#         with self.assertRaises(CourseEmail.DoesNotExist):
-#             self._do_send_course_email(entry, 101, [], {'course_title': 'Test'})
-
-
 class TestTaskFailure(Exception):
+    """Dummy exception used for unit tests."""
     pass
 
 
@@ -101,11 +67,6 @@ class TestBulkEmailInstructorTask(InstructorTaskCourseTestCase):
         self.current_task = Mock()
         self.current_task.max_retries = settings.BULK_EMAIL_MAX_RETRIES
         self.current_task.default_retry_delay = settings.BULK_EMAIL_DEFAULT_RETRY_DELAY
-#         self.current_task.request = Mock()
-#         self.current_task.request.id = task_id
-#         self.current_task.update_state = Mock()
-#         if expected_failure_message is not None:
-#             self.current_task.update_state.side_effect = TestTaskFailure(expected_failure_message)
         task_args = [entry_id, {}]
 
         with patch('bulk_email.tasks._get_current_task') as mock_get_task:
@@ -164,56 +125,38 @@ class TestBulkEmailInstructorTask(InstructorTaskCourseTestCase):
         self._create_students(num_students)
         # we also send email to the instructor:
         num_emails = num_students + 1
-        expectedNumFails = int((num_emails + 3) / 4.0)
-        expectedNumSucceeds = num_emails - expectedNumFails
+        expected_fails = int((num_emails + 3) / 4.0)
+        expected_succeeds = num_emails - expected_fails
         with patch('bulk_email.tasks.get_connection', autospec=True) as get_conn:
             # have every fourth email fail due to blacklisting:
             get_conn.return_value.send_messages.side_effect = cycle([SMTPDataError(554, "Email address is blacklisted"),
                                                                      None, None, None])
-            self._test_run_with_task(send_bulk_course_email, 'emailed', num_emails, expectedNumSucceeds, failed=expectedNumFails)
+            self._test_run_with_task(send_bulk_course_email, 'emailed', num_emails, expected_succeeds, failed=expected_fails)
 
-    def test_disconn_err_retry(self):
+    def test_retry_after_limited_retry_error(self):
         # Test that celery handles connection failures by retrying.
         num_students = 1
         self._create_students(num_students)
         # we also send email to the instructor:
         num_emails = num_students + 1
-        expectedNumFails = 0
-        expectedNumSucceeds = num_emails
+        expected_fails = 0
+        expected_succeeds = num_emails
         with patch('bulk_email.tasks.get_connection', autospec=True) as get_conn:
             # have every other mail attempt fail due to disconnection:
             get_conn.return_value.send_messages.side_effect = cycle([SMTPServerDisconnected(425, "Disconnecting"), None])
-            self._test_run_with_task(send_bulk_course_email, 'emailed', num_emails, expectedNumSucceeds, failed=expectedNumFails)
+            self._test_run_with_task(send_bulk_course_email, 'emailed', num_emails, expected_succeeds, failed=expected_fails)
 
-    def test_retry_failure(self):
+    def test_max_retry(self):
         # Test that celery can hit a maximum number of retries.
         num_students = 1
         self._create_students(num_students)
         # we also send email to the instructor:
         num_emails = num_students + 1
         # This is an ugly hack:  the failures that are reported by the EAGER version of retry
-        # are multiplied by the number of retries (equals max plus one).
-        expectedNumFails = num_emails * (settings.BULK_EMAIL_MAX_RETRIES + 1)
-        expectedNumSucceeds = 0
+        # are multiplied by the attempted number of retries (equals max plus one).
+        expected_fails = num_emails * (settings.BULK_EMAIL_MAX_RETRIES + 1)
+        expected_succeeds = 0
         with patch('bulk_email.tasks.get_connection', autospec=True) as get_conn:
-            # have every fourth email fail due to blacklisting:
+            # always fail to connect, triggering repeated retries until limit is hit:
             get_conn.return_value.send_messages.side_effect = cycle([SMTPServerDisconnected(425, "Disconnecting")])
-            self._test_run_with_task(send_bulk_course_email, 'emailed', num_emails, expectedNumSucceeds, failed=expectedNumFails)
-
-
-
-# TODO: this test fails to fail because it hooks current_task.update_state, which is never
-# used in emailing.  (It's too much work to look at the individual status of subtasks,
-# and not thread-safe to update the progress for the parent task.
-#     @skip
-#     def test_email_with_failure(self):
-#         self._test_run_with_failure(send_bulk_course_email, 'We expected this to fail')
-# 
-#     @skip
-#     def test_email_with_long_error_msg(self):
-#         self._test_run_with_long_error_msg(send_bulk_course_email)
-# 
-#     @skip
-#     def test_email_with_short_error_msg(self):
-#         self._test_run_with_short_error_msg(send_bulk_course_email)
-
+            self._test_run_with_task(send_bulk_course_email, 'emailed', num_emails, expected_succeeds, failed=expected_fails)

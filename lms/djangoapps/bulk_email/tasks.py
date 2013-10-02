@@ -134,8 +134,11 @@ def perform_delegate_email_batches(entry_id, course_id, task_input, action_name)
     user_id = entry.requester.id
     task_id = entry.task_id
 
-    # TODO: check this against argument passed in?
-    # course_id = entry.course_id
+    # perfunctory check, since expansion is made for convenience of other task
+    # code that doesn't need the entry_id.
+    if course_id != entry.course_id:
+        format_msg = "Course id conflict: explicit value %s does not match task value %s"
+        raise ValueError(format_msg.format(course_id, entry.course_id))
 
     email_id = task_input['email_id']
     try:
@@ -150,9 +153,10 @@ def perform_delegate_email_batches(entry_id, course_id, task_input, action_name)
 
     to_option = email_obj.to_option
 
-    # TODO: instead of fetching from email object, compare instead to
-    # confirm that they match, and raise an exception if they don't.
-    # course_id = email_obj.course_id
+    # sanity check that course for email_obj matches that of the task referencing it:
+    if course_id != email_obj.course_id:
+        format_msg = "Course id conflict: explicit value %s does not match email value %s"
+        raise ValueError(format_msg.format(course_id, email_obj.course_id))
 
     try:
         course = get_course_by_id(course_id, depth=1)
@@ -185,23 +189,26 @@ def perform_delegate_email_batches(entry_id, course_id, task_input, action_name)
         for i in range(num_tasks_this_query):
             if i == num_tasks_this_query - 1:
                 # Avoid cutting off the very last email when chunking a task that divides perfectly
-                # (eg num_emails_this_query = 297 and EMAILS_PER_TASK is 100)
+                # (e.g. num_emails_this_query = 297 and EMAILS_PER_TASK is 100)
                 to_list = recipient_sublist[i * chunk:]
             else:
                 to_list = recipient_sublist[i * chunk:i * chunk + chunk]
             subtask_id = str(uuid4())
             subtask_id_list.append(subtask_id)
             subtask_status = create_subtask_status(subtask_id)
-            task_list.append(send_course_email.subtask((
-                entry_id,
-                email_id,
-                to_list,
-                global_email_context,
-                subtask_status,
-            ),
-            task_id=subtask_id,
-            routing_key=settings.HIGH_PRIORITY_QUEUE,
-            ))
+            # create subtask, passing args and kwargs:
+            new_subtask = send_course_email.subtask(
+                (
+                    entry_id,
+                    email_id,
+                    to_list,
+                    global_email_context,
+                    subtask_status,
+                ),
+                task_id=subtask_id,
+                routing_key=settings.BULK_EMAIL_ROUTING_KEY,
+            )
+            task_list.append(new_subtask)
         num_emails_queued += num_emails_this_query
 
     # Sanity check: we expect the chunking to be properly summing to the original count:
@@ -228,12 +235,6 @@ def perform_delegate_email_batches(entry_id, course_id, task_input, action_name)
     # That's okay, for the InstructorTask will have the "real" status, and monitoring code
     # should be using that instead.
     return progress
-
-
-# TODO: figure out if we really need this after all (for unit tests...)
-def _get_current_task():
-    """Stub to make it easier to test without actually running Celery"""
-    return current_task
 
 
 @task(default_retry_delay=settings.BULK_EMAIL_DEFAULT_RETRY_DELAY, max_retries=settings.BULK_EMAIL_MAX_RETRIES)  # pylint: disable=E1102
@@ -531,6 +532,11 @@ def _send_course_email(entry_id, email_id, to_list, global_email_context, subtas
     finally:
         # clean up at the end
         connection.close()
+
+
+def _get_current_task():
+    """Stub to make it easier to test without actually running Celery"""
+    return current_task
 
 
 def _submit_for_retry(entry_id, email_id, to_list, global_email_context, current_exception, subtask_status, is_sending_rate_error):

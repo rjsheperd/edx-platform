@@ -796,7 +796,7 @@ CELERY_QUEUES = {
 }
 
 # let logging work as configured:
-CELERYD_HIJACK_ROOT_LOGGER=False
+CELERYD_HIJACK_ROOT_LOGGER = False
 
 ################################ Bulk Email ###################################
 
