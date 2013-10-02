@@ -200,7 +200,7 @@ function () {
                     'STATUS:', textStatus + ', MESSAGE:', '' + errorThrown
                 );
 
-                _this.videoCaption.hideCaptions(true, true);
+                _this.videoCaption.hideCaptions(true, false);
                 _this.videoCaption.hideSubtitlesEl.hide();
             }
         });
@@ -582,8 +582,12 @@ function () {
         }
     }
 
-    function hideCaptions(hide_captions, do_not_update_cookie) {
+    function hideCaptions(hide_captions, update_cookie) {
         var type;
+
+        if (typeof update_cookie === 'undefined') {
+            update_cookie = true;
+        }
 
         if (hide_captions) {
             type = 'hide_transcript';
@@ -606,7 +610,7 @@ function () {
 
         this.videoCaption.setSubtitlesHeight();
 
-        if (!do_not_update_cookie) {
+        if (update_cookie) {
             $.cookie('hide_captions', hide_captions, {
                 expires: 3650,
                 path: '/'
