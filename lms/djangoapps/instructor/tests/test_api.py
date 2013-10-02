@@ -33,6 +33,7 @@ from instructor.views.api import (
     _split_input_list, _msk_from_problem_urlname, common_exceptions_400)
 from instructor_task.api_helper import AlreadyRunningError
 
+import sys
 
 @common_exceptions_400
 def view_success(request):  # pylint: disable=W0613
@@ -125,6 +126,7 @@ class TestInstructorAPIDenyLevels(ModuleStoreTestCase, LoginEnrollmentTestCase):
             'list_forum_members',
             'update_forum_role_membership',
             'proxy_legacy_analytics',
+            'send_email',
         ]
         for endpoint in staff_level_endpoints:
             url = reverse(endpoint, kwargs={'course_id': self.course.id})
@@ -280,8 +282,8 @@ class TestInstructorAPILevelsAccess(ModuleStoreTestCase, LoginEnrollmentTestCase
     This test does NOT test whether the actions had an effect on the
     database, that is the job of test_access.
     This tests the response and action switch.
-    Actually, modify_access does not having a very meaningful
-        response yet, so only the status code is tested.
+    Actually, modify_access does not have a very meaningful
+    response yet, so only the status code is tested.
     """
     def setUp(self):
         self.instructor = AdminFactory.create()
@@ -547,7 +549,6 @@ class TestInstructorAPILevelsDataDump(ModuleStoreTestCase, LoginEnrollmentTestCa
         response = self.client.get(url)
         self.assertEqual(response.status_code, 400)
 
-
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 class TestInstructorAPIRegradeTask(ModuleStoreTestCase, LoginEnrollmentTestCase):
     """
@@ -691,8 +692,87 @@ class TestInstructorAPIRegradeTask(ModuleStoreTestCase, LoginEnrollmentTestCase)
         })
         print response.content
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(act.called)
 
+@override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
+    """
+    fill this out
+    """
+    def setUp(self):
+        self.instructor = AdminFactory.create()
+        self.course = CourseFactory.create()
+        self.client.login(username=self.instructor.username, password='test')
+        
+    def test_send_email_as_logged_in_instructor(self):
+        from nose.tools import set_trace; set_trace()
+        url = reverse('send_email', kwargs={'course_id':self.course.id})
+        response = self.client.get(url,{
+            'send_to': 'staff',
+            'subject': 'test subject',
+            'message': 'test message',
+            })
+        self.assertEqual(response.status_code, 200)
+
+    def test_send_email_but_not_logged_in(self):
+        from nose.tools import set_trace; set_trace()
+        self.client.logout()
+        url = reverse('send_email', kwargs={'course_id':self.course.id})
+        response = self.client.get(url,{
+            'send_to': 'staff',
+            'subject': 'test subject',
+            'message': 'test message',
+            })
+        self.assertEqual(response.status_code, 403)
+
+    def test_send_email_but_not_staff(self):
+        from nose.tools import set_trace; set_trace()
+        self.client.logout()
+        self.student = UserFactory()
+        self.client.login(username=self.student.username, password='test')
+        url = "reverse('send_email', kwargs={'course_id':self.course.id})"
+        response = self.client.get(url,{
+            'send_to': 'staff',
+            'subject': 'test subject',
+            'message': 'test message',
+            })
+        self.assertEqual(response.status_code, 404)
+
+    def test_send_email_but_course_not_exist(self):
+        from nose.tools import set_trace; set_trace()
+        url = reverse('send_email', kwargs={'course_id':'GarbageCourse/DNE/NoTerm'})
+        response = self.client.get(url,{
+            'send_to': 'staff',
+            'subject': 'test subject',
+            'message': 'test message',
+            })
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_send_email_no_sendto(self):
+        from nose.tools import set_trace; set_trace()
+        url = reverse('send_email', kwargs={'course_id':self.course.id})
+        response = self.client.get(url,{
+            'subject': 'test subject',
+            'message': 'test message',
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_send_email_no_subject(self):
+        from nose.tools import set_trace; set_trace()
+        url = reverse('send_email', kwargs={'course_id':self.course.id})
+        response = self.client.get(url,{
+            'send_to': 'staff',
+            'message': 'test message',
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_send_email_no_message(self):
+        from nose.tools import set_trace; set_trace()
+        url = reverse('send_email', kwargs={'course_id':self.course.id})
+        response = self.client.get(url,{
+            'send_to': 'staff',
+            'subject': 'test subject',
+            })
+        self.assertEqual(response.status_code, 400)
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 class TestInstructorAPITaskLists(ModuleStoreTestCase, LoginEnrollmentTestCase):

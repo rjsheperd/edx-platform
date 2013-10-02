@@ -65,6 +65,15 @@ class TestInstructorDashboardEmailView(ModuleStoreTestCase):
         response = self.client.get(self.url)
         self.assertFalse(self.email_link in response.content)
 
+    @patch.dict(settings.MITX_FEATURES,{'ENABLE_INSTRUCTOR_EMAIL': True})
+    def test_email_flag_false(self):
+        with patch('xmodule.modulestore.mongo.base.MongoModuleStore.get_modulestore_type') as mock_modulestore:
+            mock_modulestore.return_value = XML_MODULESTORE_TYPE
+
+            response = self.client.get(self.url)
+            self.assertFalse(self.email_link in response.content)
+
+
     @patch.dict(settings.MITX_FEATURES, {'ENABLE_INSTRUCTOR_EMAIL': True})
     def test_email_flag_true_xml_store(self):
         # If the enable email setting is enabled, but this is an XML backed course,

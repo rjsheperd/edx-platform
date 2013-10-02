@@ -29,7 +29,7 @@ def instructor_dashboard_2(request, course_id):
     """ Display the instructor dashboard for a course. """
 
     course = get_course_by_id(course_id, depth=None)
-    is_studio_course = modulestore().get_modulestore_type(course_id) == MONGO_MODULESTORE_TYPE
+    is_studio_course = (modulestore().get_modulestore_type(course_id) == MONGO_MODULESTORE_TYPE)
 
     access = {
         'admin': request.user.is_staff,
