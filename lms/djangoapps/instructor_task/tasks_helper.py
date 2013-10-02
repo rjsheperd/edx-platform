@@ -312,9 +312,7 @@ def _get_task_id_from_xmodule_args(xmodule_instance_args):
 
 
 def _get_xqueue_callback_url_prefix(xmodule_instance_args):
-    """
-
-    """
+    """Gets prefix to use when constructing xqueue_callback_url."""
     return xmodule_instance_args.get('xqueue_callback_url_prefix', '') if xmodule_instance_args is not None else ''
 
 
