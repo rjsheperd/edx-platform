@@ -722,7 +722,6 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_send_email_but_not_staff(self):
-        from nose.tools import set_trace; set_trace()
         self.client.logout()
         self.student = UserFactory()
         self.client.login(username=self.student.username, password='test')
@@ -732,10 +731,9 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
             'subject': 'test subject',
             'message': 'test message',
             })
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_send_email_but_course_not_exist(self):
-        from nose.tools import set_trace; set_trace()
         url = reverse('send_email', kwargs={'course_id': 'GarbageCourse/DNE/NoTerm'})
         response = self.client.get(url, {
             'send_to': 'staff',
@@ -745,7 +743,6 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.assertNotEqual(response.status_code, 200)
 
     def test_send_email_no_sendto(self):
-        from nose.tools import set_trace; set_trace()
         url = reverse('send_email', kwargs={'course_id': self.course.id})
         response = self.client.get(url, {
             'subject': 'test subject',
@@ -754,7 +751,6 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_send_email_no_subject(self):
-        from nose.tools import set_trace; set_trace()
         url = reverse('send_email', kwargs={'course_id': self.course.id})
         response = self.client.get(url, {
             'send_to': 'staff',
@@ -763,7 +759,6 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_send_email_no_message(self):
-        from nose.tools import set_trace; set_trace()
         url = reverse('send_email', kwargs={'course_id': self.course.id})
         response = self.client.get(url, {
             'send_to': 'staff',
