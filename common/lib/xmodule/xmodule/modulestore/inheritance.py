@@ -45,6 +45,7 @@ class InheritanceMixin(XBlockMixin):
     static_asset_path = String(help="Path to use for static assets - overrides Studio c4x://", scope=Scope.settings, default='')
     text_customization = Dict(
         help="String customization substitutions for particular locations",
+        default=None,
         scope=Scope.settings
     )
 
@@ -90,7 +91,6 @@ def own_metadata(module):
     mapped to their serialized values
     """
     return module.get_explicitly_set_fields_by_scope(Scope.settings)
-
 
 class InheritanceKeyValueStore(KeyValueStore):
     """
