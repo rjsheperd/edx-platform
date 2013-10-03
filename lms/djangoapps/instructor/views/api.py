@@ -722,13 +722,10 @@ def send_email(request, course_id):
     - 'message' specifies email's content
     """
     course = get_course_by_id(course_id)
-    has_instructor_access = has_access(request.user, course, 'instructor')
     send_to = request.GET.get("send_to")
     subject = request.GET.get("subject")
     message = request.GET.get("message")
     text_message = html_to_text(message)
-    if not has_instructor_access:
-        return HttpResponseForbidden("Operation requires instructor access.")
     email = CourseEmail(
         course_id=course_id,
         sender=request.user,
