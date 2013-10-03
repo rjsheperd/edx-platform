@@ -82,7 +82,7 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
         </div>
         <div class="item-actions">
           <a href="#" data-tooltip="${_('Delete this section')}" class="delete-button delete-section-button"><span class="delete-icon"></span></a>
-          <a href="#" data-tooltip="${_('Drag to re-order')}" class="drag-handle"></a>
+          <span data-tooltip="${_('Drag to re-order')}" class="drag-handle"></span>
         </div>
       </header>
     </section>
@@ -172,7 +172,7 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
 
             <div class="item-actions">
               <a href="#" data-tooltip="${_('Delete this section')}" class="delete-button delete-section-button"><span class="delete-icon"></span></a>
-              <a href="#" data-tooltip="${_('Drag to reorder')}" class="drag-handle section-drag-handle"></a>
+              <span data-tooltip="${_('Drag to reorder')}" class="drag-handle section-drag-handle"></span>
             </div>
           </header>
           <div class="subsection-list">
@@ -201,7 +201,7 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
 
                   <div class="item-actions">
                     <a href="#" data-tooltip="${_('Delete this subsection')}" class="delete-button delete-subsection-button"><span class="delete-icon"></span></a>
-                    <a href="#" data-tooltip="${_('Drag to reorder')}" class="drag-handle subsection-drag-handle"></a>
+                    <span data-tooltip="${_('Drag to reorder')}" class="drag-handle subsection-drag-handle"></span>
                   </div>
                 </div>
                 ${units.enum_units(subsection)}

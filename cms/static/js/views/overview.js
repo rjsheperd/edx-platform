@@ -288,21 +288,21 @@ $(document).ready(function() {
     // Section
     CMS.Views.Draggabilly.makeDraggable(
         '.courseware-section',
-        'a.section-drag-handle',
+        '.section-drag-handle',
         '.courseware-overview',
         'article.courseware-overview'
     );
     // Subsection
     CMS.Views.Draggabilly.makeDraggable(
         '.id-holder',
-        'a.subsection-drag-handle',
+        '.subsection-drag-handle',
         '.subsection-list > ol',
         '.courseware-section'
     );
     // Unit
     CMS.Views.Draggabilly.makeDraggable(
         '.unit',
-        'a.unit-drag-handle',
+        '.unit-drag-handle',
         'ol.sortable-unit-list',
         'li.branch, article.subsection-body'
     );
