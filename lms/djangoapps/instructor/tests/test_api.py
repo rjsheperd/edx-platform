@@ -6,9 +6,7 @@ import unittest
 import json
 import requests
 from urllib import quote
-from django.conf import settings
 from django.test import TestCase
-from nose.tools import raises
 from mock import Mock, patch
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
@@ -33,7 +31,6 @@ from instructor.views.api import (
     _split_input_list, _msk_from_problem_urlname, common_exceptions_400)
 from instructor_task.api_helper import AlreadyRunningError
 
-import sys
 
 @common_exceptions_400
 def view_success(request):  # pylint: disable=W0613
@@ -549,6 +546,7 @@ class TestInstructorAPILevelsDataDump(ModuleStoreTestCase, LoginEnrollmentTestCa
         response = self.client.get(url)
         self.assertEqual(response.status_code, 400)
 
+
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 class TestInstructorAPIRegradeTask(ModuleStoreTestCase, LoginEnrollmentTestCase):
     """
@@ -693,6 +691,7 @@ class TestInstructorAPIRegradeTask(ModuleStoreTestCase, LoginEnrollmentTestCase)
         print response.content
         self.assertEqual(response.status_code, 200)
 
+
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
     """
@@ -704,8 +703,7 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.client.login(username=self.instructor.username, password='test')
         
     def test_send_email_as_logged_in_instructor(self):
-        from nose.tools import set_trace; set_trace()
-        url = reverse('send_email', kwargs={'course_id':self.course.id})
+        url = reverse('send_email', kwargs={'course_id': self.course.id})
         response = self.client.get(url,{
             'send_to': 'staff',
             'subject': 'test subject',
@@ -714,10 +712,9 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_send_email_but_not_logged_in(self):
-        from nose.tools import set_trace; set_trace()
         self.client.logout()
-        url = reverse('send_email', kwargs={'course_id':self.course.id})
-        response = self.client.get(url,{
+        url = reverse('send_email', kwargs={'course_id': self.course.id})
+        response = self.client.get(url, {
             'send_to': 'staff',
             'subject': 'test subject',
             'message': 'test message',
@@ -729,8 +726,8 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
         self.client.logout()
         self.student = UserFactory()
         self.client.login(username=self.student.username, password='test')
-        url = "reverse('send_email', kwargs={'course_id':self.course.id})"
-        response = self.client.get(url,{
+        url = reverse('send_email', kwargs={'course_id': self.course.id})
+        response = self.client.get(url, {
             'send_to': 'staff',
             'subject': 'test subject',
             'message': 'test message',
@@ -739,8 +736,8 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
 
     def test_send_email_but_course_not_exist(self):
         from nose.tools import set_trace; set_trace()
-        url = reverse('send_email', kwargs={'course_id':'GarbageCourse/DNE/NoTerm'})
-        response = self.client.get(url,{
+        url = reverse('send_email', kwargs={'course_id': 'GarbageCourse/DNE/NoTerm'})
+        response = self.client.get(url, {
             'send_to': 'staff',
             'subject': 'test subject',
             'message': 'test message',
@@ -749,8 +746,8 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
 
     def test_send_email_no_sendto(self):
         from nose.tools import set_trace; set_trace()
-        url = reverse('send_email', kwargs={'course_id':self.course.id})
-        response = self.client.get(url,{
+        url = reverse('send_email', kwargs={'course_id': self.course.id})
+        response = self.client.get(url, {
             'subject': 'test subject',
             'message': 'test message',
             })
@@ -758,8 +755,8 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
 
     def test_send_email_no_subject(self):
         from nose.tools import set_trace; set_trace()
-        url = reverse('send_email', kwargs={'course_id':self.course.id})
-        response = self.client.get(url,{
+        url = reverse('send_email', kwargs={'course_id': self.course.id})
+        response = self.client.get(url, {
             'send_to': 'staff',
             'message': 'test message',
             })
@@ -767,12 +764,13 @@ class TestInstructorSendEmail(ModuleStoreTestCase, LoginEnrollmentTestCase):
 
     def test_send_email_no_message(self):
         from nose.tools import set_trace; set_trace()
-        url = reverse('send_email', kwargs={'course_id':self.course.id})
-        response = self.client.get(url,{
+        url = reverse('send_email', kwargs={'course_id': self.course.id})
+        response = self.client.get(url, {
             'send_to': 'staff',
             'subject': 'test subject',
             })
         self.assertEqual(response.status_code, 400)
+
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 class TestInstructorAPITaskLists(ModuleStoreTestCase, LoginEnrollmentTestCase):
