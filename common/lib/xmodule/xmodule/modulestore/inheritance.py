@@ -1,7 +1,7 @@
 from datetime import datetime
 from pytz import UTC
 
-from xblock.fields import Scope, Boolean, String, Float, XBlockMixin, Dict
+from xblock.fields import Scope, Boolean, String, Float, XBlockMixin
 from xmodule.fields import Date, Timedelta
 from xblock.runtime import KeyValueStore
 
@@ -43,11 +43,6 @@ class InheritanceMixin(XBlockMixin):
         scope=Scope.settings
     )
     static_asset_path = String(help="Path to use for static assets - overrides Studio c4x://", scope=Scope.settings, default='')
-    text_customization = Dict(
-        help="String customization substitutions for particular locations",
-        default=None,
-        scope=Scope.settings
-    )
 
 
 def compute_inherited_metadata(descriptor):
