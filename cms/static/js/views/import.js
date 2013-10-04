@@ -54,7 +54,7 @@ var stageError = function (stageNo, msg) {
         $(elem).removeClass("is-not-started").removeClass("is-started").addClass("is-complete");
         updateCog($(elem), false);
     });
-    var message = msg || "There was an error with the upload";
+    var message = msg || '${_("There was an error with the upload")}';
     var elem = $('ol.status-progress').children().eq(stageNo);
     elem.removeClass('is-started').addClass('has-error');
     elem.find('p.copy').hide().after("<p class='copy error'>" + message + "</p>");

@@ -4,7 +4,7 @@
 
 <%! from django.core.urlresolvers import reverse %>
 <%block name="title">${_("Course Import")}</%block>
-<%block name="bodyclass">is-signedin course tools view-import</%block>
+<%block name="bodyclass">is-signedin course tools import view-import</%block>
 
 <%block name="content">
 <div class="wrapper-mast wrapper">
@@ -40,7 +40,7 @@
 
         <div class="wrapper wrapper-file-name file-name-block">
             <h3 class="title">
-              <span class="label">File Chosen:</span>
+              <span class="label">${_("File Chosen:")}</span>
               <span class="file-name"></span>
             </h3>
 
@@ -187,17 +187,24 @@ $('#fileupload').fileupload({
                     if (xhr.status != 200) {
                         window.stopGetStatus = true;
                         window.onbeforeunload = null;
-                        var serverMsg = JSON.parse(result["responseText"]);
-                        var errMsg = serverMsg.hasOwnProperty("ErrMsg") ?  serverMsg["ErrMsg"] : "" ;
-                        if (serverMsg.hasOwnProperty("Stage")) {
-                            var stage = serverMsg["Stage"]
-                            stageError(stage, defaults[stage] + errMsg);
+                        if (result["responseText"]) {
+                            var serverMsg = JSON.parse(result["responseText"]);
+                            var errMsg = serverMsg.hasOwnProperty("ErrMsg") ?  serverMsg["ErrMsg"] : "" ;
+                            if (serverMsg.hasOwnProperty("Stage")) {
+                                var stage = serverMsg["Stage"]
+                                stageError(stage, defaults[stage] + errMsg);
+                            }
+                            else {
+                                alert('${_("Your import has failed.")}\n\n' + errMsg);
+                            }
+                            chooseBtn.html('${_("Choose new file")}').show();
+                            bar.hide();
                         }
                         else {
-                            alert('${_("Your import has failed.")}\n\n' + errMsg);
+                            alert('${_("Your import has failed.")}\n\n');
                         }
-                        bar.hide();
                         chooseBtn.html('${_("Choose new file")}').show();
+                        bar.hide();
                     }
                 });
             });
