@@ -117,4 +117,4 @@ class ImportTestCase(CourseTestCase):
         })
         resp_status = self.client.get(status_url)
         import_status = json.loads(resp_status.content)["ImportStatus"]
-        self.assertTrue(import_status == 3 or import_status == 0)
+        self.assertIn(import_status, (3, 0))
