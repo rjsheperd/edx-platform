@@ -54,4 +54,26 @@ class TestPhotoVerification(TestCase):
         #attempt.deny("Could not read name on Photo ID")
         #assert_equals(attempt.status, "denied")
 
+    def test_user_status(self):
+        # test for correct status when no error returned
+        user = UserFactory.create()
+        status = SoftwareSecurePhotoVerification.user_status(user)
+        self.assertEquals(status, ('none', ''))
 
+        # test for when one has been created
+        attempt = SoftwareSecurePhotoVerification(user=user)
+        attempt.status = 'approved'
+        attempt.save()
+
+        status = SoftwareSecurePhotoVerification.user_status(user)
+        self.assertEquals(status, (attempt.status, ''))
+
+        # create another one for the same user, make sure the right one is
+        # returned
+        attempt2 = SoftwareSecurePhotoVerification(user=user)
+        attempt2.status = 'denied'
+        attempt2.error_msg = "No ID provided"
+        attempt2.save()
+
+        status = SoftwareSecurePhotoVerification.user_status(user)
+        self.assertEquals(status, (attempt2.status, attempt2.error_msg))
