@@ -716,15 +716,15 @@ def list_forum_members(request, course_id):
 def send_email(request, course_id):
     """
     Send an email to self, staff, or everyone involved in a course.
-    Query Paramaters:
+    Query Parameters:
     - 'send_to' specifies what group the email should be sent to
     - 'subject' specifies email's subject
     - 'message' specifies email's content
     """
     course = get_course_by_id(course_id)
-    send_to = request.GET.get("send_to")
-    subject = request.GET.get("subject")
-    message = request.GET.get("message")
+    send_to = request.POST.get("send_to")
+    subject = request.POST.get("subject")
+    message = request.POST.get("message")
     text_message = html_to_text(message)
     email = CourseEmail(
         course_id=course_id,

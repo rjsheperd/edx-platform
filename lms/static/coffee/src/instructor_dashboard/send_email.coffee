@@ -30,6 +30,7 @@ class SendEmail
         message: @$emailEditor.save()['data']
 
       $.ajax
+        type: 'POST'
         dataType: 'json'
         url: @$btn_send.data 'endpoint'
         data: send_data
