@@ -6,9 +6,10 @@
 <script type="text/javascript" src="jsi18n/"></script>
 <div class="vert-left send-email">
   <h2> ${_("Send Email")} </h2>
+  <div class="request-response msg msg-confirm"></div>
   <ul class="list-fields">
     <li class="field">
-      <label for="id_to">${_("Send to:")}</label>
+      <label for="id_to">${_("Send to:")}</label><br/>
       <select id="id_to" name="send_to">
         <option value="myself">${_("Myself")}</option>
         %if to_option == "staff":
@@ -25,7 +26,7 @@
     </li>
   <br/>
   <li class="field">
-    <label for="id_subject">${_("Subject: ")}</label>
+    <label for="id_subject">${_("Subject: ")}</label><br/>
     <input type="text" id="id_subject" name="subject">
   </li>
   <li class="field">
@@ -44,6 +45,5 @@
   </ul>
  </div>
   <input type="button" name="send" value="${_("Send Email")}" data-endpoint="${ section_data['send_email'] }" >
-  <div class="request-response"></div>
   <div class="request-response-error"></div>
 </div>
