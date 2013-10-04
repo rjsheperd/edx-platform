@@ -138,6 +138,7 @@
 
   .courseware-section {
     @extend %ui-window;
+    @include transition(background $tmg-avg ease-in-out 0);
     position: relative;
     margin-top: ($baseline);
     padding-bottom: ($baseline/2);
@@ -683,6 +684,11 @@
     .drop-target-prepend .draggable-drop-indicator-initial {
       opacity: 1.0;
     }
+
+    // STATE: was dropped
+    &.was-dropped {
+      background-color: $ui-update-color;
+    }
   }
 
   // UI: DnD - specific elems/cases - subsection
@@ -700,6 +706,14 @@
     .drop-target-prepend .draggable-drop-indicator-initial {
       opacity: 1.0;
     }
+
+    // STATE: was dropped
+    &.was-dropped {
+
+      > .section-item {
+        background-color: $ui-update-color !important; // nasty, but needed for specificity
+      }
+    }
   }
 
   // UI: DnD - specific elems/cases - unit
@@ -711,6 +725,14 @@
 
     .draggable-drop-indicator-after {
       bottom: 0;
+    }
+
+    // STATE: was dropped
+    &.was-dropped {
+
+      > .section-item {
+        background-color: $ui-update-color !important; // nasty, but needed for specificity
+      }
     }
   }
 

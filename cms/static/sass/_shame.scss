@@ -3,7 +3,7 @@
 // ====================
 
 // view - dashboard
-.dashboard {
+.view-dashboard {
 
   // elements - authorship controls
   .wrapper-authorshiprights {
@@ -19,6 +19,15 @@
       transition-duration: 0.25s;
       transition-timing-function: ease-in-out;
     }
+  }
+}
+
+// ====================
+
+.view-unit {
+
+  .unit-location .draggable-drop-indicator {
+    display: none; //needed to not show DnD UI (UI is shared across both views)
   }
 }
 

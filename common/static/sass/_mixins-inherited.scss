@@ -366,6 +366,7 @@
   }
 
   .section-item {
+    @include transition(background $tmg-avg ease-in-out 0);
     position: relative;
     display: block;
     padding: 6px 8px 8px 16px;
