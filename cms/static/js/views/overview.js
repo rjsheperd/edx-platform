@@ -228,8 +228,10 @@ CMS.Views.Draggabilly = {
             title: gettext('Saving&hellip;')
         });
         saving.show();
+        ele.addClass('was-dropped');
         this.saveItem(newParentEle, childrenSelector, function() {
             saving.hide();
+            ele.removeClass('was-dropped');
         });
     },
 
